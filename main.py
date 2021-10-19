@@ -12,7 +12,24 @@ def new_df_gold_length(df):
 
     return df2
 
+def add_country(df):
+    country = []
+    for elements in df["League"] :
+        if elements == "LCK" :
+            country.append("Korea")
+        elif elements == "NALCS" :
+            country.append("North America")
+        elif elements == "EULCS" :
+            country.append("Europe")
+        elif elements == "CBLoL" :
+            country.append("Brazil")
+        elif elements == "TCL" :
+            country.append("North America")
+        else :
+            country.append("not found")
+    df.insert(1, "Country", country)
+
 df = pd.read_csv("data/LeagueofLegends.csv")
 df_gold_length = new_df_gold_length(df)
-#print(df2['Type'].unique())
-print(df_gold_length['redTeamTag'].isna().value_counts())
+add_country(df_gold_length)
+print(df_gold_length.head())
