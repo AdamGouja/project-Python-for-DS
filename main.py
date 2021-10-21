@@ -58,24 +58,31 @@ def add_localisation(df, position):
         position : numéro de la colonne où ajouter la colonne lattitude, la colonne longitude sera posée après
     """
     app = Nominatim(user_agent="Adam")
+
+    k  = [app.geocode("Korea").raw["lat"], app.geocode("Korea").raw["lon"]]
+    na = [app.geocode("North America").raw["lat"], app.geocode("North America").raw["lon"]]
+    eu = [app.geocode("Europe").raw["lat"], app.geocode("Europe").raw["lon"]]
+    br = [app.geocode("Brazil").raw["lat"], app.geocode("Brazil").raw["lon"]]
+    t  = [app.geocode("Turkey").raw["lat"], app.geocode("Turkey").raw["lon"]]
+
     lattitude = []
     longitude = []
     for elements in df["Country"]:
         if elements == "Korea":
-            lattitude.append(app.geocode("Korea").raw["lat"])
-            longitude.append(app.geocode("Korea").raw["lon"])
+            lattitude.append(k[0])
+            longitude.append(k[1])
         elif elements == "North America":
-            lattitude.append(app.geocode("North America").raw["lat"])
-            longitude.append(app.geocode("North America").raw["lon"])
+            lattitude.append(na[0])
+            longitude.append(na[1])
         elif elements == "Europe":
-            lattitude.append(app.geocode("Europe").raw["lat"])
-            longitude.append(app.geocode("Europe").raw["lon"])
+            lattitude.append(eu[0])
+            longitude.append(eu[1])
         elif elements == "Brazil":
-            lattitude.append(app.geocode("Brazil").raw["lat"])
-            longitude.append(app.geocode("Brazil").raw["lon"])
+            lattitude.append(br[0])
+            longitude.append(br[1])
         elif elements == "Turkey":
-            lattitude.append(app.geocode("Turkey").raw["lat"])
-            longitude.append(app.geocode("Turkey").raw["lon"])
+            lattitude.append(t[0])
+            longitude.append(t[1])
     df.insert(position, "Lattitude", lattitude)
     df.insert(position+1, "Longitude", longitude)
 
@@ -86,4 +93,3 @@ df_gold_length = new_df_gold_length(df)
 add_country(df_gold_length, 1)
 add_localisation(df_gold_length, 2)
 print(df_gold_length.head())
-# print(df_gold_length["Country"].unique())
