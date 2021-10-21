@@ -1,8 +1,6 @@
 import pandas as pd
 import geopy
 from geopy.geocoders import Nominatim
-#import time
-#from pprint import pprint
 
 def new_df_gold_length(df):
     """
@@ -25,38 +23,15 @@ def new_df_gold_length(df):
 
     return df2
 
-def add_country(df, position):
+def add_country_localisation(df, position):
     """
-    Ajoute une colonne "Country" au dataframe mis en argument selon la ligue du match en question.
-
-    Args:
-        df : dataframe où ajouter la colonne
-        position : numéro de la colonne où ajouter "Country"
-    """
-    country = []
-    for elements in df["League"] :
-        if elements == "LCK" :
-            country.append("Korea")
-        elif elements == "NALCS" :
-            country.append("North America")
-        elif elements == "EULCS" :
-            country.append("Europe")
-        elif elements == "CBLoL" :
-            country.append("Brazil")
-        elif elements == "TCL" :
-            country.append("Turkey")
-        else :
-            country.append("not found")
-    df.insert(position, "Country", country)
-
-def add_localisation(df, position):
-    """
-    Ajoute une colonne "Lattitude" et une colonne "Longitude au dataframe mis en argument selon le pays de chaque ligue.
+    Ajoute une colonne "Country", "Lattitude" et "Longitude" au dataframe mis en argument selon la ligue du match en question.
 
     Args:
         df : dataframe où ajouter les colonnes
-        position : numéro de la colonne où ajouter la colonne lattitude, la colonne longitude sera posée après
+        position : numéro de la colonne à partir de laquelle ajouter les colonnes
     """
+    
     app = Nominatim(user_agent="Adam")
 
     k  = [app.geocode("Korea").raw["lat"], app.geocode("Korea").raw["lon"]]
@@ -65,31 +40,43 @@ def add_localisation(df, position):
     br = [app.geocode("Brazil").raw["lat"], app.geocode("Brazil").raw["lon"]]
     t  = [app.geocode("Turkey").raw["lat"], app.geocode("Turkey").raw["lon"]]
 
+    country = []
     lattitude = []
     longitude = []
-    for elements in df["Country"]:
-        if elements == "Korea":
+
+    for elements in df["League"] :
+        if elements == "LCK" :
+            country.append("Korea")
             lattitude.append(k[0])
             longitude.append(k[1])
-        elif elements == "North America":
+        elif elements == "NALCS" :
+            country.append("North America")
             lattitude.append(na[0])
             longitude.append(na[1])
-        elif elements == "Europe":
+        elif elements == "EULCS" :
+            country.append("Europe")
             lattitude.append(eu[0])
             longitude.append(eu[1])
-        elif elements == "Brazil":
+        elif elements == "CBLoL" :
+            country.append("Brazil")
             lattitude.append(br[0])
             longitude.append(br[1])
-        elif elements == "Turkey":
+        elif elements == "TCL" :
+            country.append("Turkey")
             lattitude.append(t[0])
             longitude.append(t[1])
-    df.insert(position, "Lattitude", lattitude)
-    df.insert(position+1, "Longitude", longitude)
-
+        else :
+            country.append("not found")
+            lattitude.append("not found")
+            longitude.append("not found")
+    df.insert(position, "Country", country)
+    df.insert(position+1, "Lattitude", lattitude)
+    df.insert(position+2, "Longitude", longitude)
 
 
 df = pd.read_csv("data/LeagueofLegends.csv")
 df_gold_length = new_df_gold_length(df)
-add_country(df_gold_length, 1)
-add_localisation(df_gold_length, 2)
+
+add_country_localisation(df_gold_length,1)
+
 print(df_gold_length.head())
