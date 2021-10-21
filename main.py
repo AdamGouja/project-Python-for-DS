@@ -2,6 +2,8 @@ import pandas as pd
 import geopy
 from geopy.geocoders import Nominatim
 
+#-----------------------------------------------------------------------------FUNCTIONS-----------------------------------------------------------------------------#
+
 def new_df_gold_length(df):
     """
     Crée un nouveau dataframe avec comme colonnes 'League', 'Type','blueTeamTag','bResult','rResult','redTeamTag','gamelength' et 'golddiff'.
@@ -73,10 +75,42 @@ def add_country_localisation(df, position):
     df.insert(position+1, "Lattitude", lattitude)
     df.insert(position+2, "Longitude", longitude)
 
+def gold_to_list(df,position):
+    """
+    Modifie la colonne "golddiff" en passant ses valeurs de string à liste
 
+    Args:
+        df : dataframe où mettre la colonne
+        position : numéro de la colonne où insérer la colonne golddiff
+    """
+    new_gold_diff = []
+    for elements in df["golddiff"]:
+        i=1
+        s=''
+        tab=[]
+        num = 0
+        for i in range (1,len(elements)):
+            if elements[i] == ',' or elements[i] == ']':
+                num = pd.to_numeric(s)
+                s='' 
+                tab.append(num)   
+            else :
+                s=s+elements[i]            
+            i=i+1
+        new_gold_diff.append(tab)
+    del df["golddiff"]
+    df.insert(position, "golddiff", new_gold_diff)
+
+
+#-----------------------------------------------------------------------------MAIN CODE-----------------------------------------------------------------------------#
+
+#Récupération de la data frame
 df = pd.read_csv("data/LeagueofLegends.csv")
+
+#Création de la nouvelle dataframe avec les colonnes souhaitées
 df_gold_length = new_df_gold_length(df)
-
+#ajout des colonnes permettant la localisation
 add_country_localisation(df_gold_length,1)
-
+#modification de la colonne des golds, passage de string à list
+gold_to_list(df_gold_length,10)
 print(df_gold_length.head())
