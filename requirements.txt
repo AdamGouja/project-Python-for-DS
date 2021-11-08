@@ -2,3 +2,5 @@
 pandas
 numpy
 geopy
+plotly
+dash
