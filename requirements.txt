@@ -4,3 +4,6 @@ numpy
 geopy
 plotly
 dash
+kaggle
+os
+shutil

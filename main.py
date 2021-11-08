@@ -8,6 +8,7 @@ import dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+from get_data import get_data_LoL
 
 #-----------------------------------------------------------------------------FUNCTIONS-----------------------------------------------------------------------------#
 
@@ -102,36 +103,9 @@ def add_localisation(df, position):
     df["Lattitude"] = df["Lattitude"].astype("float")
     df["Longitude"] = df["Longitude"].astype("float")
 
-def gold_to_list(df):
-    """
-    Modifie la colonne "golddiff" en passant ses valeurs de string à list.
-
-    Args:
-        df : dataframe où mettre la colonne
-    """
-    new_gold_diff = []
-
-    for elements in df["golddiff"]:
-        i=1
-        s=''
-        tab=[]
-        num = 0
-        for i in range (1,len(elements)):
-            if elements[i] == ',' or elements[i] == ']':
-                num = pd.to_numeric(s)
-                s='' 
-                tab.append(num)   
-            else :
-                s=s+elements[i]            
-            i=i+1
-        new_gold_diff.append(tab)
-
-    position = df.columns.get_loc("golddiff")
-    del df["golddiff"]
-    df.insert(position, "golddiff", new_gold_diff)
-
-
 #-----------------------------------------------------------------------------MAIN CODE-----------------------------------------------------------------------------#
+
+get_data_LoL()
 
 # Récupération de la data frame
 initial_df = pd.read_csv("data/LeagueofLegends.csv")
@@ -142,26 +116,45 @@ df_length = new_df_length(initial_df)
 # ajout des colonnes permettant la localisation
 add_localisation(df_length,2)
 
-# modification de la colonne des golds, passage de string à list (maintenant inutile)
-# gold_to_list(df_length)
-
 # Ajout des golds jusqu'à la minute 40
-gold = pd.read_csv("data/gold.csv")
-gold = gold.query("Type=='golddiff'")
-gold = gold.drop(['Type'], axis=1)
-gold.drop(gold.iloc[:,gold.columns.get_loc("min_41"):],1,inplace=True)
-# concaténation des deux tableaux
-df_gold = pd.merge(df_length[['Address', 'Country']], gold)
+gold = pd.read_csv("data/gold.csv").query("Type=='golddiff'")
+gold.drop(['Type'], axis=1, inplace=True)
+gold.drop(gold.iloc[:,gold.columns.get_loc("min_41"):], axis=1, inplace=True)
+
+df_gold_winside = pd.merge(df_length[['Address','rResult']], gold)
+df_gold_winside.drop(["Address"], axis = 1, inplace=True)
+
+i=0
+for elements in df_gold_winside['rResult']:
+    if elements == 1:   
+        df_gold_winside.loc[i] = (-1)*df_gold_winside.loc[i]
+    i+=1
+
+df_gold_winside = pd.concat([gold['Address'], df_gold_winside], axis = 1)
+df_gold_winside = pd.merge(df_length[['Address', 'Country','Year']], df_gold_winside)
+df_gold_winside = df_gold_winside.drop(['rResult'], axis=1)
 
 year = 2015
-years = df_length['Year'].unique()
+years1 = df_length['Year'].unique()
+years2 = df_gold_winside['Year'].unique()
 
 
 if __name__ == '__main__':
 
     app = dash.Dash(__name__) # (3)
 
-    hist_length = px.histogram(df_length[df_length['Year']==year], x=['gamelength'],facet_col="Country", color = "Country", labels='Oui')
+    hist_length = px.histogram(
+        df_length[df_length['Year']==year], 
+        x=['gamelength'],
+        facet_col="Country", 
+        color = "Country", 
+        labels = {'value':'duration of the game (in minutes)'}
+    )
+
+    line_golds = px.line(
+        df_gold_winside.query("Year=='"+str(year)+"'").groupby(['Country']).mean().T.drop(["Year"], axis = 0),
+        color = 'Country'
+    )
 
     app.layout = html.Div(children=[
                                     html.H1(
@@ -188,7 +181,8 @@ if __name__ == '__main__':
                                     html.Div(
                                         id='description_objective',
                                         children=f'''
-                                        The objective of this project is to find if there is a real difference between the games of every Country since they are playing the same game.
+                                        The objective of this project is to find if there is a real difference between the games of every Country since they are all playing 
+                                        the same game.
                                         '''
                                     ),
                                 
@@ -204,8 +198,8 @@ if __name__ == '__main__':
 
                                     dcc.Slider(
                                         id="year-slider",
-                                        min=min(years),
-                                        max=max(years),
+                                        min=min(years1),
+                                        max=max(years1),
                                         tooltip={"placement": "bottom", "always_visible": True},
                                         value=year,
                                     ),
@@ -226,10 +220,34 @@ if __name__ == '__main__':
 
                                      html.H2(
                                         id="title_golddiff",
-                                        children=f'Duration of games depending on the Country ({year})',
+                                        children=f'Mean gold difference during the game for each country ({year})',
                                         style={'textAlign': 'center', 'color': '#6D071A'} # (5)
                                     ),
 
+                                    html.Label(
+                                        children = 'Year',
+                                    ),
+
+                                    dcc.Slider(
+                                        id="year-slider2",
+                                        min=min(years2),
+                                        max=max(years2)-1,
+                                        tooltip={"placement": "bottom", "always_visible": True},
+                                        value=year,
+                                    ),
+
+                                    dcc.Graph(
+                                        id='graph_golddiff',
+                                        figure=line_golds
+                                    ),
+
+                                    html.Div(
+                                        id='description_graph_golddiff',
+                                        children=f'''
+                                        The graph above shows the mean gold difference at each minute for each Country in {year}.
+                                        Mouse over for details.
+                                        '''
+                                    ),
 
                                 ]
     )
@@ -241,14 +259,39 @@ if __name__ == '__main__':
         [Input(component_id='year-slider', component_property='value')],
     )
 
-    def update_figure(input_value): # (3)
-        return [px.histogram(df_length[df_length['Year']==input_value], x=['gamelength'],facet_col="Country", color = "Country"),
+    def update_figure(input_value): 
+        return [px.histogram(df_length[df_length['Year']==input_value], 
+                            x=['gamelength'],
+                            facet_col="Country", 
+                            color = "Country", 
+                            labels = {'value':'duration of the game (in minutes)'}),
 
                 f'Duration of games depending on the Country ({input_value})',
 
                 f'''
                 The graph above shows the number of games that ended at each minute for year {input_value}.
                 Each country data has its own colour and graph.
+                Mouse over for details.
+                '''
+                ]
+    
+    @app.callback(
+        [Output(component_id='graph_golddiff', component_property='figure'), 
+         Output(component_id='title_golddiff', component_property='children'),
+         Output(component_id='description_graph_golddiff', component_property='children')],
+        [Input(component_id='year-slider2', component_property='value')],
+    )
+
+    def update_figure2(input_value): 
+        return [px.line(
+                    df_gold_winside.query("Year=='"+str(input_value)+"'").groupby(['Country']).mean().T.drop(["Year"], axis = 0),
+                    color = 'Country'
+                ),
+
+                f'Mean gold difference during the game for each country ({input_value})',
+
+                f'''
+                The graph above shows the mean gold difference at each minute for each Country in {input_value}.
                 Mouse over for details.
                 '''
                 ]
@@ -287,31 +330,7 @@ if __name__ == '__main__':
 
     # )
 
-    # @app.callback(
-    #     [Output(component_id='graph1', component_property='figure'), 
-    #      Output(component_id='title', component_property='children'),
-    #      Output(component_id='description', component_property='children')], # (1)
-    #     [Input(component_id='year-slider', component_property='value')], # (2)
-    # )
 
-    # def update_figure(input_value): # (3)
-    #     return [px.scatter(data[input_value], x="gdpPercap", y="lifeExp",
-    #                     color="continent",
-    #                     size="pop",
-    #                     hover_name="country"), # (4)
-    #             f'Life expectancy vs GDP per capita ({input_value})',
-    #             f'''
-
-    #                             The graph above shows relationship between life expectancy and
-
-    #                             GDP per capita for year {input_value}. Each continent data has its own
-
-    #                             colour and symbol size is proportionnal to country population.
-
-    #                             Mouse over for details.
-
-    #                         '''
-    #             ]
     # @app.callback(  Output('year-slider', 'value'),
     #                 [Input('interval', 'n_intervals')])
     # def on_tick(n_intervals):
