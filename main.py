@@ -21,10 +21,10 @@ def new_df_length(df):
     Crée un nouveau dataframe avec comme colonnes 'Address', 'League', 'Type', 'Year', 'blueTeamTag', 'bResult', 'rResult', 'redTeamTag' et 'gamelength'.
 
     Args:
-        df : dataframe initial
+        df (dataframe) : dataframe initial
 
     Returns:
-        Nouveau dataframe.
+        (dataframe) : Nouveau dataframe.
     """
     df2 = df[['Address', 'League', 'Type', 'Year', 'blueTeamTag', 'bResult', 'rResult', 'redTeamTag', 'gamelength']]
 
@@ -44,11 +44,11 @@ def get_localisation():
     Récupère la lattitude et la longitude des pays suivants : Corée, Amérique du Nord, Europe, Brésil et Turquie. 
 
     Returns:
-        k : Lattitude et Longitude de la Corée.
-        na : Lattitude et Longitude de l'Amérique du Nord.
-        eu : Lattitude et Longitude de l'Europe.
-        br : Lattitude et Longitude du Brésil.
-        t : Lattitude et Longitude de la Turquie.
+        k (list): Lattitude et Longitude de la Corée.
+        na (list): Lattitude et Longitude de l'Amérique du Nord.
+        eu (list): Lattitude et Longitude de l'Europe.
+        br (list): Lattitude et Longitude du Brésil.
+        t (list): Lattitude et Longitude de la Turquie.
     """
     app = Nominatim(user_agent="Adam")
 
@@ -71,14 +71,11 @@ def add_localisation_teams(df, initial_df):
     Ajoute une colonne Country, Lattitude et Longitude pour chacune des équipes du dataframe mis en paramètre.
 
     Args:
-        df : dataframe où ajouter les colonnes.
+        df (dataframe): dataframe où ajouter les colonnes.
 
     Returns:
-        NA_app : Nombre d'apparition des équipes d'Amérique du Nord
-        K_app : Nombre d'apparition des équipes de Corée
-        EU_app : Nombre d'apparition des équipes d'Europe
-        TU_app : Nombre d'apparition des équipes de Turquie
-        BR_app : Nombre d'apparition des équipes du Brésil
+        apparitions (list): liste contenant le nombre d'apparition des équipes d'Amérique du Nord, de Corée, d'Europe, de Turquie et du Brésil.
+        wins (list): liste contenant le nombre de victoires des équipes d'Amérique du Nord, de Corée, d'Europe, de Turquie et du Brésil.
     """
     bCountry = []
     bLattitude = []
@@ -87,12 +84,19 @@ def add_localisation_teams(df, initial_df):
     rLattitude = []
     rLongitude = []
 
-    # Nombre d'apparition de chaque pays
+    # Nombre d'apparitions de chaque pays
     NA_app = 0
     K_app = 0
     EU_app = 0
     TU_app = 0
     BR_app = 0
+
+    # Nombre de victoires de chaque pays
+    NA_win = 0
+    K_win = 0
+    EU_win = 0
+    TU_win = 0
+    BR_win = 0
 
     k,na,eu,br,t = get_localisation()
     df_teams = initial_df[['League', 'blueTeamTag','bResult','rResult','redTeamTag']]
@@ -107,26 +111,36 @@ def add_localisation_teams(df, initial_df):
             bCountry.append('North America')
             bLattitude.append(na[0])
             bLongitude.append(na[1])
+            if df['bResult'].iloc[i] == 1:
+                NA_win+=1
             NA_app+=1
         elif df['blueTeamTag'].iloc[i] in EU_Teams:
             bCountry.append('Europe')
             bLattitude.append(eu[0])
             bLongitude.append(eu[1])
+            if df['bResult'].iloc[i] == 1:
+                EU_win+=1
             EU_app+=1
         elif df['blueTeamTag'].iloc[i] in K_Teams:
             bCountry.append('Korea')
             bLattitude.append(k[0])
             bLongitude.append(k[1])
+            if df['bResult'].iloc[i] == 1:
+                K_win+=1
             K_app+=1
         elif df['blueTeamTag'].iloc[i] in TU_Teams:
             bCountry.append('Turkey')
             bLattitude.append(t[0])
             bLongitude.append(t[1])
+            if df['bResult'].iloc[i] == 1:
+                TU_win+=1
             TU_app+=1
         elif df['blueTeamTag'].iloc[i] in BR_Teams:
             bCountry.append('Brazil')
             bLattitude.append(br[0])
             bLongitude.append(br[1])
+            if df['bResult'].iloc[i] == 1:
+                BR_win+=1
             BR_app+=1
         else:
             bCountry.append(None)
@@ -136,26 +150,36 @@ def add_localisation_teams(df, initial_df):
             rCountry.append('North America')
             rLattitude.append(na[0])
             rLongitude.append(na[1])
+            if df['rResult'].iloc[i] == 1:
+                NA_win+=1
             NA_app+=1
         elif df['redTeamTag'].iloc[i] in EU_Teams:
             rCountry.append('Europe')
             rLattitude.append(eu[0])
             rLongitude.append(eu[1])
+            if df['rResult'].iloc[i] == 1:
+                EU_win+=1
             EU_app+=1
         elif df['redTeamTag'].iloc[i] in K_Teams:
             rCountry.append('Korea')
             rLattitude.append(k[0])
             rLongitude.append(k[1])
+            if df['rResult'].iloc[i] == 1:
+                K_win+=1
             K_app+=1
         elif df['redTeamTag'].iloc[i] in TU_Teams:
             rCountry.append('Turkey')
             rLattitude.append(t[0])
             rLongitude.append(t[1])
+            if df['rResult'].iloc[i] == 1:
+                TU_win+=1
             TU_app+=1
         elif df['redTeamTag'].iloc[i] in BR_Teams:
             rCountry.append('Brazil')
             rLattitude.append(br[0])
             rLongitude.append(br[1])
+            if df['rResult'].iloc[i] == 1:
+                BR_win+=1
             BR_app+=1
         else:
             rCountry.append(None)
@@ -169,15 +193,18 @@ def add_localisation_teams(df, initial_df):
     df.insert(df.columns.get_loc("redTeamTag")+1, "rLattitude", rLattitude)
     df.insert(df.columns.get_loc("redTeamTag")+1, "rCountry", rCountry)
 
-    return NA_app,K_app,EU_app,TU_app,BR_app
+    apparitions = [NA_app,TU_app,EU_app,K_app,BR_app]
+    wins = [NA_win,TU_win,EU_win,K_win,BR_win]
+
+    return apparitions, wins
 
 def add_localisation(df, position):
     """
     Ajoute une colonne "Country", "Lattitude" et "Longitude" au dataframe mis en argument selon la ligue du match en question.
 
     Args:
-        df : dataframe où ajouter les colonnes
-        position : numéro de la colonne à partir de laquelle ajouter les colonnes
+        df (dataframe): dataframe où ajouter les colonnes.
+        position (int): numéro de la colonne à partir de laquelle ajouter les colonnes.
     """
     
     # NALCS : Amérique du Nord
@@ -230,11 +257,11 @@ def League_teams(df_teams, League:str):
     Crée un tableau avec le nom des équipes qui ont participé à au moins un match compétitif dans la Ligue en paramètre.
 
     Args:
-        df_teams : dataframe contenant tous les matchs de toutes les Leagues.
-        League : Nom de la Ligue d'où on veut récupérer les équipes qui la compose.
+        df_teams (dataframe): dataframe contenant tous les matchs de toutes les Leagues.
+        League (str): Nom de la Ligue d'où on veut récupérer les équipes qui la compose.
 
     Returns:
-        Tableau des équipes composant la Ligue mise en paramètre
+        (list): Tableau des équipes composant la Ligue mise en paramètre
     """
     df = df_teams[(df_teams['League']==League)]
     League_Teams = []
@@ -250,11 +277,11 @@ def new_df_gold(df, df_length):
     Crée un dataframe avec la différence de golds selon l'équipe qui a gagné la partie
 
     Args:
-        df : dataframe des golds.
-        df_length : dataframe contenant les résultats des parties.
+        df (dataframe): dataframe des golds.
+        df_length (dataframe): dataframe contenant les résultats des parties.
 
     Returns:
-        Nouveau dataframe.
+        (dataframe) : Nouveau dataframe.
     """
     gold = df.query("Type=='golddiff'")
     gold.drop(['Type'], axis=1, inplace=True)
@@ -276,11 +303,49 @@ def new_df_gold(df, df_length):
     return df_gold_winside
     
 def filterNoneType(lis):
+    """
+    Supprime les données manquantes de la chaîne de caractère mise en paramètre.
+
+    Args:
+        lis (list): liste sous forme de chaîne de caractère
+
+    Returns:
+        (list): liste sous forme de chaîne de caractère avec les données vide supprimées
+    """
     lis2 = []
     for l in lis: #filter out NoneType
         if type(l) == str:
             lis2.append(l)
     return lis2
+
+def map(df_wc, show, str_show:str):
+    """
+    Génère une carte qui sera enregistrée dans le répertoire local.
+
+    Args:
+        df_wc (dataframe): dataframe utilisée pour la création de la carte
+        show (list): données à afficher
+        str_show (str): nom de la donnée à afficher
+    """
+    countries = filterNoneType(list(df_wc['bCountry'].unique()))
+    lats = [x for x in df_wc['bLattitude'].unique() if math.isnan(x) == False]
+    longs = [x for x in df_wc['bLongitude'].unique() if math.isnan(x) == False]
+    games = show
+    coords = (48.8398094,2.5840685)
+
+    # Création de la map
+    map = folium.Map(location=coords, zoom_start=2)
+    for i in range(len(countries)):
+        folium.CircleMarker(
+            location = (lats[i], longs[i]),
+            radius = games[i]/2,
+            color = 'crimson',
+            fill = True,
+            fill_color = 'crimson',
+            tooltip = 'Number of '+str_show+' : '+str(games[i])+
+                    "\n"+'Country : '+countries[i]
+        ).add_to(map)
+    map.save(outfile = str_show+'.html')
 
 #-----------------------------------------------------------------------------MAIN CODE-----------------------------------------------------------------------------#
 
@@ -290,11 +355,13 @@ get_data_LoL()
 # Récupération de la data frame
 initial_df = pd.read_csv("data/LeagueofLegends.csv")
 
+initial_df
+
 # Création de la dataframe avec les colonnes souhaitées pour la longueur des parties
 df_length = new_df_length(initial_df)
 
 # Ajout des colonnes permettant la localisation
-add_localisation(df_length,2)
+add_localisation(df_length,df_length.columns.get_loc("League")+1)
 
 # Création de la dataframe des golds jusqu'à la minute 40
 gold = pd.read_csv("data/gold.csv")
@@ -313,27 +380,13 @@ df_wc = initial_df[['Address', 'League', 'Year', 'blueTeamTag','bResult','rResul
 df_wc = df_wc[(initial_df['League']=='WC')]
 
 # Ajout des localisations et création des variables du nombre de parties de chaque pays
-na_games, k_games, eu_games, tu_games, br_games = add_localisation_teams(df_wc, initial_df)
+apparition, win = add_localisation_teams(df_wc, initial_df)
 
-# Initialisation des variables utiles pour la création de la map
-countries = filterNoneType(list(df_wc['bCountry'].unique()))
-lats = [x for x in df_wc['bLattitude'].unique() if math.isnan(x) == False]
-longs = [x for x in df_wc['bLongitude'].unique() if math.isnan(x) == False]
-games = [na_games,tu_games,eu_games,k_games,br_games]
-coords = (48.8398094,2.5840685)
+# Création des cartes
+map(df_wc,apparition,'apparitions')
+map(df_wc,win,'wins')
 
-# Création de la map
-map = folium.Map(location=coords, zoom_start=2)
-for i in range(len(countries)):
-    folium.CircleMarker(
-        location = (lats[i], longs[i]),
-        radius = games[i]/2,
-        color = 'crimson',
-        fill = True,
-        fill_color = 'crimson',
-        tooltip = str(games[i])
-    ).add_to(map)
-map.save(outfile='map.html')
+
 
 # Création des variables
 year = 2015
@@ -366,13 +419,13 @@ if __name__ == '__main__':
                                     html.H1(
                                         id="title_project",
                                         children=f'Mini Project - Python for DataScience',
-                                        style={'textAlign': 'center', 'color': '#03224C'} # (5)
+                                        style={'textAlign': 'center', 'color': '#03224C'}
                                     ),
 
                                     html.H3(
                                         id="names",
                                         children=f'Realised by Adam Gouja & Loïc Djinou',
-                                        style={'textAlign': 'center', 'color': '#03224C'} # (5)
+                                        style={'textAlign': 'center', 'color': '#03224C'}
                                     ),
 
                                     html.Div(
@@ -395,7 +448,7 @@ if __name__ == '__main__':
                                     html.H2(
                                         id="title_gamelength",
                                         children=f'Duration of games depending on the Country ({year})',
-                                        style={'textAlign': 'center', 'color': '#6D071A'} # (5)
+                                        style={'textAlign': 'center', 'color': '#6D071A'}
                                     ),
 
                                     html.Label(
@@ -424,10 +477,10 @@ if __name__ == '__main__':
                                         '''
                                     ),
 
-                                     html.H2(
+                                    html.H2(
                                         id="title_golddiff",
                                         children=f'Mean gold difference during the game for each country ({year})',
-                                        style={'textAlign': 'center', 'color': '#6D071A'} # (5)
+                                        style={'textAlign': 'center', 'color': '#6D071A'}
                                     ),
 
                                     html.Label(
@@ -454,12 +507,49 @@ if __name__ == '__main__':
                                         Mouse over for details.
                                         '''
                                     ),
+
+                                    html.H2(
+                                        id="title_map_apparition",
+                                        children=f'Number of apparitions in World Cups for every Country',
+                                        style={'textAlign': 'center', 'color': '#6D071A'}
+                                    ),
                                     
                                     html.Iframe(
-                                        srcDoc = open('map.html', 'r').read(),
+                                        id = 'map_apparition',
+                                        srcDoc = open('apparitions.html', 'r').read(),
                                         width= '70%',
-                                        height= 600
-                                    )
+                                        height= 600,
+                                    ),
+
+                                    html.Div(
+                                        id='description_map_apparition',
+                                        children=f'''
+                                        The map above shows the number of games played in World Cups for each Country between 2014 and 2018.
+                                        Mouse over for details.
+                                        '''
+                                    ),
+
+                                    html.H2(
+                                        id="title_map_wins",
+                                        children=f'Number of wins in World Cups for every Country',
+                                        style={'textAlign': 'center', 'color': '#6D071A'}
+                                    ),
+
+                                    html.Iframe(
+                                        id = 'map_wins',
+                                        srcDoc = open('wins.html', 'r').read(),
+                                        width= '70%',
+                                        height= 600,
+                                        title= 'Number of wins in World Cup for each Country' 
+                                    ),
+
+                                    html.Div(
+                                        id='description_map_win',
+                                        children=f'''
+                                        The map above shows the number of games won in World Cups for each Country between 2014 and 2018.
+                                        Mouse over for details.
+                                        '''
+                                    ),
 
                                 ]
     )
@@ -509,7 +599,7 @@ if __name__ == '__main__':
                 ]
 
     #-------------RUN APP-------------#
-    app.run_server(debug=True)
+    app.run_server()
 
     #                         
 
