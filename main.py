@@ -1,5 +1,6 @@
 #------------------------------------------------------------------------------IMPORTS------------------------------------------------------------------------------#
 
+from numpy.core.numeric import NaN
 import pandas as pd
 import geopy
 from geopy.geocoders import Nominatim
@@ -9,6 +10,9 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from get_data import get_data_LoL
+import folium
+import math
+
 
 #-----------------------------------------------------------------------------FUNCTIONS-----------------------------------------------------------------------------#
 
@@ -35,6 +39,138 @@ def new_df_length(df):
 
     return df2
 
+def get_localisation():
+    """
+    Récupère la lattitude et la longitude des pays suivants : Corée, Amérique du Nord, Europe, Brésil et Turquie. 
+
+    Returns:
+        k : Lattitude et Longitude de la Corée.
+        na : Lattitude et Longitude de l'Amérique du Nord.
+        eu : Lattitude et Longitude de l'Europe.
+        br : Lattitude et Longitude du Brésil.
+        t : Lattitude et Longitude de la Turquie.
+    """
+    app = Nominatim(user_agent="Adam")
+
+    loc_k  = app.geocode("Korea").raw
+    loc_na = app.geocode("North America").raw
+    loc_eu = app.geocode("Europe").raw
+    loc_br = app.geocode("Brazil").raw
+    loc_t  = app.geocode("Turkey").raw
+
+    k  = [float(loc_k["lat"]) , float(loc_k["lon"])]
+    na = [float(loc_na["lat"]), float(loc_na["lon"])]
+    eu = [float(loc_eu["lat"]), float(loc_eu["lon"])]
+    br = [float(loc_br["lat"]), float(loc_br["lon"])]
+    t  = [float(loc_t["lat"]), float(loc_t["lon"])]
+
+    return k,na,eu,br,t
+
+def add_localisation_teams(df, initial_df):
+    """
+    Ajoute une colonne Country, Lattitude et Longitude pour chacune des équipes du dataframe mis en paramètre.
+
+    Args:
+        df : dataframe où ajouter les colonnes.
+
+    Returns:
+        NA_app : Nombre d'apparition des équipes d'Amérique du Nord
+        K_app : Nombre d'apparition des équipes de Corée
+        EU_app : Nombre d'apparition des équipes d'Europe
+        TU_app : Nombre d'apparition des équipes de Turquie
+        BR_app : Nombre d'apparition des équipes du Brésil
+    """
+    bCountry = []
+    bLattitude = []
+    bLongitude = []
+    rCountry = []
+    rLattitude = []
+    rLongitude = []
+
+    # Nombre d'apparition de chaque pays
+    NA_app = 0
+    K_app = 0
+    EU_app = 0
+    TU_app = 0
+    BR_app = 0
+
+    k,na,eu,br,t = get_localisation()
+    df_teams = initial_df[['League', 'blueTeamTag','bResult','rResult','redTeamTag']]
+    NA_Teams = League_teams(df_teams, 'NALCS')
+    K_Teams = League_teams(df_teams, 'LCK')
+    EU_Teams = League_teams(df_teams, 'EULCS')
+    TU_Teams = League_teams(df_teams, 'TCL')
+    BR_Teams = League_teams(df_teams, 'CBLoL')
+
+    for i in range(len(df)):
+        if df['blueTeamTag'].iloc[i] in NA_Teams:
+            bCountry.append('North America')
+            bLattitude.append(na[0])
+            bLongitude.append(na[1])
+            NA_app+=1
+        elif df['blueTeamTag'].iloc[i] in EU_Teams:
+            bCountry.append('Europe')
+            bLattitude.append(eu[0])
+            bLongitude.append(eu[1])
+            EU_app+=1
+        elif df['blueTeamTag'].iloc[i] in K_Teams:
+            bCountry.append('Korea')
+            bLattitude.append(k[0])
+            bLongitude.append(k[1])
+            K_app+=1
+        elif df['blueTeamTag'].iloc[i] in TU_Teams:
+            bCountry.append('Turkey')
+            bLattitude.append(t[0])
+            bLongitude.append(t[1])
+            TU_app+=1
+        elif df['blueTeamTag'].iloc[i] in BR_Teams:
+            bCountry.append('Brazil')
+            bLattitude.append(br[0])
+            bLongitude.append(br[1])
+            BR_app+=1
+        else:
+            bCountry.append(None)
+            bLattitude.append(None)
+            bLongitude.append(None)
+        if df['redTeamTag'].iloc[i] in NA_Teams:
+            rCountry.append('North America')
+            rLattitude.append(na[0])
+            rLongitude.append(na[1])
+            NA_app+=1
+        elif df['redTeamTag'].iloc[i] in EU_Teams:
+            rCountry.append('Europe')
+            rLattitude.append(eu[0])
+            rLongitude.append(eu[1])
+            EU_app+=1
+        elif df['redTeamTag'].iloc[i] in K_Teams:
+            rCountry.append('Korea')
+            rLattitude.append(k[0])
+            rLongitude.append(k[1])
+            K_app+=1
+        elif df['redTeamTag'].iloc[i] in TU_Teams:
+            rCountry.append('Turkey')
+            rLattitude.append(t[0])
+            rLongitude.append(t[1])
+            TU_app+=1
+        elif df['redTeamTag'].iloc[i] in BR_Teams:
+            rCountry.append('Brazil')
+            rLattitude.append(br[0])
+            rLongitude.append(br[1])
+            BR_app+=1
+        else:
+            rCountry.append(None)
+            rLattitude.append(None)
+            rLongitude.append(None)
+    
+    df.insert(df.columns.get_loc("blueTeamTag")-1, "bCountry", bCountry)
+    df.insert(df.columns.get_loc("blueTeamTag")-1, "bLattitude", bLattitude)
+    df.insert(df.columns.get_loc("blueTeamTag")-1, "bLongitude", bLongitude)
+    df.insert(df.columns.get_loc("redTeamTag")+1, "rLongitude", rLongitude)
+    df.insert(df.columns.get_loc("redTeamTag")+1, "rLattitude", rLattitude)
+    df.insert(df.columns.get_loc("redTeamTag")+1, "rCountry", rCountry)
+
+    return NA_app,K_app,EU_app,TU_app,BR_app
+
 def add_localisation(df, position):
     """
     Ajoute une colonne "Country", "Lattitude" et "Longitude" au dataframe mis en argument selon la ligue du match en question.
@@ -53,19 +189,7 @@ def add_localisation(df, position):
     # WC : World Cup
     # CBLoL : Brésil
 
-    app = Nominatim(user_agent="Adam")
-
-    loc_k  = app.geocode("Korea").raw
-    loc_na = app.geocode("North America").raw
-    loc_eu = app.geocode("Europe").raw
-    loc_br = app.geocode("Brazil").raw
-    loc_t  = app.geocode("Turkey").raw
-
-    k  = [loc_k["lat"] , loc_k["lon"]]
-    na = [loc_na["lat"], loc_na["lon"]]
-    eu = [loc_eu["lat"], loc_eu["lon"]]
-    br = [loc_br["lat"], loc_br["lon"]]
-    t  = [loc_t["lat"] , loc_t["lon"]]
+    k, na, eu, br, t = get_localisation()
 
     country = []
     lattitude = []
@@ -100,40 +224,118 @@ def add_localisation(df, position):
     df.insert(position, "Country", country)
     df.insert(position+1, "Lattitude", lattitude)
     df.insert(position+2, "Longitude", longitude)
-    df["Lattitude"] = df["Lattitude"].astype("float")
-    df["Longitude"] = df["Longitude"].astype("float")
+
+def League_teams(df_teams, League:str):
+    """
+    Crée un tableau avec le nom des équipes qui ont participé à au moins un match compétitif dans la Ligue en paramètre.
+
+    Args:
+        df_teams : dataframe contenant tous les matchs de toutes les Leagues.
+        League : Nom de la Ligue d'où on veut récupérer les équipes qui la compose.
+
+    Returns:
+        Tableau des équipes composant la Ligue mise en paramètre
+    """
+    df = df_teams[(df_teams['League']==League)]
+    League_Teams = []
+    for i in range(len(df)):
+        if df['blueTeamTag'].iloc[i] not in League_Teams:
+            League_Teams.append(df['blueTeamTag'].iloc[i])
+        if df['redTeamTag'].iloc[i] not in League_Teams:
+            League_Teams.append(df['redTeamTag'].iloc[i])
+    return League_Teams
+
+def new_df_gold(df, df_length):
+    """
+    Crée un dataframe avec la différence de golds selon l'équipe qui a gagné la partie
+
+    Args:
+        df : dataframe des golds.
+        df_length : dataframe contenant les résultats des parties.
+
+    Returns:
+        Nouveau dataframe.
+    """
+    gold = df.query("Type=='golddiff'")
+    gold.drop(['Type'], axis=1, inplace=True)
+    gold.drop(gold.iloc[:,gold.columns.get_loc("min_41"):], axis=1, inplace=True)
+    df_gold_winside = pd.merge(df_length[['Address','rResult']], gold)
+    df_gold_winside_with_addresses = df_gold_winside.copy()
+    df_gold_winside.drop(["Address"], axis = 1, inplace=True)
+
+    i=0
+    for elements in df_gold_winside['rResult']:
+        if elements == 1:   
+            df_gold_winside.loc[i] = (-1)*df_gold_winside.loc[i]
+        i+=1
+
+    df_gold_winside = pd.concat([df_gold_winside_with_addresses['Address'], df_gold_winside], axis = 1)
+    df_gold_winside = pd.merge(df_length[['Address', 'Country','Year']], df_gold_winside)
+    df_gold_winside = df_gold_winside.drop(['rResult'], axis=1)
+
+    return df_gold_winside
+    
+def filterNoneType(lis):
+    lis2 = []
+    for l in lis: #filter out NoneType
+        if type(l) == str:
+            lis2.append(l)
+    return lis2
 
 #-----------------------------------------------------------------------------MAIN CODE-----------------------------------------------------------------------------#
 
+#Récupération des données à partir d'internet
 get_data_LoL()
 
 # Récupération de la data frame
 initial_df = pd.read_csv("data/LeagueofLegends.csv")
 
-# Création de la nouvelle dataframe avec les colonnes souhaitées
+# Création de la dataframe avec les colonnes souhaitées pour la longueur des parties
 df_length = new_df_length(initial_df)
 
-# ajout des colonnes permettant la localisation
+# Ajout des colonnes permettant la localisation
 add_localisation(df_length,2)
 
-# Ajout des golds jusqu'à la minute 40
-gold = pd.read_csv("data/gold.csv").query("Type=='golddiff'")
-gold.drop(['Type'], axis=1, inplace=True)
-gold.drop(gold.iloc[:,gold.columns.get_loc("min_41"):], axis=1, inplace=True)
+# Création de la dataframe des golds jusqu'à la minute 40
+gold = pd.read_csv("data/gold.csv")
+df_gold_winside = new_df_gold(gold, df_length)
 
-df_gold_winside = pd.merge(df_length[['Address','rResult']], gold)
-df_gold_winside.drop(["Address"], axis = 1, inplace=True)
+# Initialisation des équipes de chaque Ligue
+df_teams = initial_df[['League', 'blueTeamTag','bResult','rResult','redTeamTag']]
+NA_Teams = League_teams(df_teams, 'NALCS')
+K_Teams = League_teams(df_teams, 'LCK')
+EU_Teams = League_teams(df_teams, 'EULCS')
+TU_Teams = League_teams(df_teams, 'TCL')
+BR_Teams = League_teams(df_teams, 'CBLoL')
 
-i=0
-for elements in df_gold_winside['rResult']:
-    if elements == 1:   
-        df_gold_winside.loc[i] = (-1)*df_gold_winside.loc[i]
-    i+=1
+# Création du dataframe pour les matchs internationaux
+df_wc = initial_df[['Address', 'League', 'Year', 'blueTeamTag','bResult','rResult','redTeamTag','gamelength']]
+df_wc = df_wc[(initial_df['League']=='WC')]
 
-df_gold_winside = pd.concat([gold['Address'], df_gold_winside], axis = 1)
-df_gold_winside = pd.merge(df_length[['Address', 'Country','Year']], df_gold_winside)
-df_gold_winside = df_gold_winside.drop(['rResult'], axis=1)
+# Ajout des localisations et création des variables du nombre de parties de chaque pays
+na_games, k_games, eu_games, tu_games, br_games = add_localisation_teams(df_wc, initial_df)
 
+# Initialisation des variables utiles pour la création de la map
+countries = filterNoneType(list(df_wc['bCountry'].unique()))
+lats = [x for x in df_wc['bLattitude'].unique() if math.isnan(x) == False]
+longs = [x for x in df_wc['bLongitude'].unique() if math.isnan(x) == False]
+games = [na_games,tu_games,eu_games,k_games,br_games]
+coords = (48.8398094,2.5840685)
+
+# Création de la map
+map = folium.Map(location=coords, zoom_start=2)
+for i in range(len(countries)):
+    folium.CircleMarker(
+        location = (lats[i], longs[i]),
+        radius = games[i]/2,
+        color = 'crimson',
+        fill = True,
+        fill_color = 'crimson',
+        tooltip = str(games[i])
+    ).add_to(map)
+map.save(outfile='map.html')
+
+# Création des variables
 year = 2015
 years1 = df_length['Year'].unique()
 years2 = df_gold_winside['Year'].unique()
@@ -143,6 +345,7 @@ if __name__ == '__main__':
 
     app = dash.Dash(__name__) # (3)
 
+    #-------------GRAPHS-------------#
     hist_length = px.histogram(
         df_length[df_length['Year']==year], 
         x=['gamelength'],
@@ -156,6 +359,9 @@ if __name__ == '__main__':
         color = 'Country'
     )
 
+    
+
+    #-------------LAYOUT-------------#
     app.layout = html.Div(children=[
                                     html.H1(
                                         id="title_project",
@@ -231,7 +437,7 @@ if __name__ == '__main__':
                                     dcc.Slider(
                                         id="year-slider2",
                                         min=min(years2),
-                                        max=max(years2)-1,
+                                        max=max(years2),
                                         tooltip={"placement": "bottom", "always_visible": True},
                                         value=year,
                                     ),
@@ -248,17 +454,23 @@ if __name__ == '__main__':
                                         Mouse over for details.
                                         '''
                                     ),
+                                    
+                                    html.Iframe(
+                                        srcDoc = open('map.html', 'r').read(),
+                                        width= '70%',
+                                        height= 600
+                                    )
 
                                 ]
     )
 
+    #-------------CALLBACKS-------------#
     @app.callback(
         [Output(component_id='graph_gamelength', component_property='figure'), 
          Output(component_id='title_gamelength', component_property='children'),
          Output(component_id='description_graph_gamelength', component_property='children')],
         [Input(component_id='year-slider', component_property='value')],
     )
-
     def update_figure(input_value): 
         return [px.histogram(df_length[df_length['Year']==input_value], 
                             x=['gamelength'],
@@ -274,14 +486,14 @@ if __name__ == '__main__':
                 Mouse over for details.
                 '''
                 ]
-    
+
+
     @app.callback(
         [Output(component_id='graph_golddiff', component_property='figure'), 
          Output(component_id='title_golddiff', component_property='children'),
          Output(component_id='description_graph_golddiff', component_property='children')],
         [Input(component_id='year-slider2', component_property='value')],
     )
-
     def update_figure2(input_value): 
         return [px.line(
                     df_gold_winside.query("Year=='"+str(input_value)+"'").groupby(['Country']).mean().T.drop(["Year"], axis = 0),
