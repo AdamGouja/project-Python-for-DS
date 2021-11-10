@@ -66,7 +66,7 @@ def get_localisation():
 
     return k,na,eu,br,t
 
-def add_localisation_teams(df, initial_df):
+def teams_loc_apparition_wins(df, initial_df):
     """
     Ajoute une colonne Country, Lattitude et Longitude pour chacune des équipes du dataframe mis en paramètre.
 
@@ -380,13 +380,11 @@ df_wc = initial_df[['Address', 'League', 'Year', 'blueTeamTag','bResult','rResul
 df_wc = df_wc[(initial_df['League']=='WC')]
 
 # Ajout des localisations et création des variables du nombre de parties de chaque pays
-apparition, win = add_localisation_teams(df_wc, initial_df)
+apparition, win = teams_loc_apparition_wins(df_wc, initial_df)
 
 # Création des cartes
 map(df_wc,apparition,'apparitions')
 map(df_wc,win,'wins')
-
-
 
 # Création des variables
 year = 2015
@@ -600,47 +598,3 @@ if __name__ == '__main__':
 
     #-------------RUN APP-------------#
     app.run_server()
-
-    #                         
-
-    #                         dcc.Interval(   id='interval',
-    #                             interval=1*1000, # in milliseconds
-    #                             n_intervals=0
-    #                         ),
-
-    #                          # (6)
-
-
-    #                         html.Div(
-    #                             id='description',
-
-    #                             children=f'''
-
-    #                             The graph above shows relationship between life expectancy and
-
-    #                             GDP per capita for year {year}. Each continent data has its own
-
-    #                             colour and symbol size is proportionnal to country population.
-
-    #                             Mouse over for details.
-
-    #                         '''), # (7)
-
-    
-
-    # ]
-
-    # )
-
-
-    # @app.callback(  Output('year-slider', 'value'),
-    #                 [Input('interval', 'n_intervals')])
-    # def on_tick(n_intervals):
-    #     if n_intervals is None: return 0
-    #     return years[(n_intervals+1)%len(years)]
-
-
-    
-
-
-     # (8)
