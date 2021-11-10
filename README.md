@@ -37,6 +37,9 @@ https://www.kaggle.com/docs/api
 Enfin, pour ouvrir le dashboard du projet, il suffit d'utiliser la commande suivante dans le terminal en se situant dans le répertoire du projet :
 python main.py (pour Windows)
 python3 main.py (pour Linux)
+
+L'URL d'accès au dashboard est le suivant :
+http://127.0.0.1:8050/
  
 
 ## Developer Guide
