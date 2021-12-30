@@ -2,7 +2,7 @@
 
 from numpy.core.numeric import NaN
 import pandas as pd
-import geopy
+# import geopy
 from geopy.geocoders import Nominatim
 import plotly.express as px
 import dash
@@ -406,7 +406,7 @@ if __name__ == '__main__':
     )
 
     line_golds = px.line(
-        df_gold_winside.query("Year=='"+str(year)+"'").groupby(['Country']).mean().T.drop(["Year"], axis = 0),
+        df_gold_winside[df_gold_winside['Year'] == year].groupby(['Country']).mean().T.drop(["Year"]),
         color = 'Country'
     )
 
@@ -584,7 +584,7 @@ if __name__ == '__main__':
     )
     def update_figure2(input_value): 
         return [px.line(
-                    df_gold_winside.query("Year=='"+str(input_value)+"'").groupby(['Country']).mean().T.drop(["Year"], axis = 0),
+                    df_gold_winside[df_gold_winside['Year'] == input_value].groupby(['Country']).mean().T.drop(["Year"]),
                     color = 'Country'
                 ),
 
@@ -598,3 +598,4 @@ if __name__ == '__main__':
 
     #-------------RUN APP-------------#
     app.run_server()
+    
